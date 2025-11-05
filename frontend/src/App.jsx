@@ -4,7 +4,7 @@ import { Routes, Route, Link, useLocation } from 'react-router-dom';
 import './App.css';
 import HomePage from './pages/HomePage';
 import Inscripcion from './pages/inscripcion'; 
-import Login from './pages/Login';      
+import Login from './pages/login';      
 
 function App() {
   const [menuOpen, setMenuOpen] = useState(false);
