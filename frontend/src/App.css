@@ -1,0 +1,296 @@
+:root {
+  --verde-halcon: #00552B; 
+  --verde-claro: #0D8D40; 
+  --blanco: #FFFFFF;
+  --gris-claro: #f4f4f4;
+  --texto-oscuro: #333333;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth; 
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+    Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  line-height: 1.6;
+  color: var(--texto-oscuro);
+}
+
+/* --- Contenedor Principal --- */
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+/* --- Barra de Navegación --- */
+.navbar {
+  background-color: var(--verde-halcon);
+  color: var(--blanco);
+  padding: 1rem 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.navbar .container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.navbar .logo h1 {
+  margin: 0;
+  font-size: 1.8rem;
+}
+
+.navbar .nav-links a {
+  color: var(--blanco);
+  text-decoration: none;
+  margin: 0 0.75rem;
+  font-weight: 600;
+  transition: color 0.3s ease;
+}
+
+.navbar .nav-links a:hover {
+  color: var(--verde-claro);
+}
+
+/* --- Botón de Hamburguesa (Oculto en Desktop) --- */
+.menu-toggle {
+  display: none; 
+  background: none;
+  border: none;
+  color: var(--blanco);
+  font-size: 2.2rem; 
+  line-height: 1;
+  cursor: pointer;
+  z-index: 1001; 
+}
+
+/* --- Sección Hero (Principal) --- */
+#hero {
+  background: linear-gradient(rgba(0, 85, 43, 0.8), rgba(0, 85, 43, 0.8)), url('https://via.placeholder.com/1500x800.png?text=Fondo+de+Cancha+de+Fútbol'); /* Reemplaza con una imagen de fondo */
+  background-size: cover;
+  background-position: center;
+  height: 80vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  color: var(--blanco);
+}
+
+.hero-content h2 {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.hero-content p {
+  font-size: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.btn {
+  background-color: var(--verde-claro);
+  color: var(--blanco);
+  padding: 0.8rem 1.5rem;
+  text-decoration: none;
+  font-weight: bold;
+  border-radius: 5px;
+  transition: background-color 0.3s ease;
+}
+
+.btn:hover {
+  background-color: #0bc5cc; 
+}
+
+/* --- Secciones Generales --- */
+section {
+  padding: 4rem 0;
+}
+
+section:nth-child(odd) {
+  background-color: var(--gris-claro); 
+}
+
+section h3 {
+  font-size: 2.5rem;
+  text-align: center;
+  margin-bottom: 2.5rem;
+  color: var(--verde-halcon);
+}
+
+/* --- Grid de Tarjetas (Info, Cursos, Entrenadores) --- */
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.card {
+  background: var(--blanco);
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+  padding: 2rem;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.12);
+}
+
+.card h4 {
+  color: var(--verde-halcon);
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.card ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+.card li {
+  margin-bottom: 0.5rem;
+}
+
+/* --- Sección Ubicación --- */
+#ubicacion .card {
+  text-align: center;
+}
+
+.map-frame {
+  width: 100%;
+  max-width: 800px;
+  height: auto;
+  border-radius: 8px;
+  border: 2px solid var(--verde-halcon);
+  margin-top: 1rem;
+}
+
+.footer {
+  background-color: var(--verde-halcon);
+  color: var(--blanco);
+  text-align: center;
+  padding: 2rem 0;
+  margin-top: 2rem;
+}
+
+
+
+@media (max-width: 768px) {
+
+  /* --- Navegación Móvil --- */
+  .navbar .container {
+    flex-direction: row; 
+    justify-content: space-between; 
+    align-items: center;
+    width: 100%; 
+  }
+
+  .menu-toggle {
+    display: block; 
+  }
+
+  /* Prepara el menú desplegable */
+  .navbar .nav-links {
+    transform: translateY(-150%);
+    transition: transform 0.3s ease-in-out;
+
+    /* Posición y Estilo */
+    position: absolute;
+    top: 65px; 
+    left: 0;
+    width: 100%;
+    background-color: var(--verde-halcon); 
+    
+    /* Disposición de enlaces */
+    display: flex;
+    flex-direction: column; 
+    align-items: center;
+    padding: 1rem 0;
+    border-top: 1px solid var(--verde-claro);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+  }
+
+  /* --- ESTADO ABIERTO --- */
+  .navbar .nav-links.open {
+    transform: translateY(0); 
+  }
+
+  .navbar .nav-links a {
+    margin: 0;
+    padding: 1rem 0; 
+    width: 100%; 
+    text-align: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1); 
+  }
+
+  .navbar .nav-links a:last-child {
+    border-bottom: none;
+  }
+
+  /* --- Hero --- */
+  #hero {
+    height: 60vh; 
+  }
+  
+  #hero h2 {
+    font-size: 2.2rem; 
+  }
+
+  #hero p {
+    font-size: 1.1rem; 
+  }
+
+  section {
+    padding: 2.5rem 0; 
+  }
+
+  section h3 {
+    font-size: 2rem; 
+  }
+
+  .container {
+    padding: 0 1rem; 
+  }
+}
+
+@media (max-width: 480px) {
+  
+
+  #hero h2 {
+    font-size: 1.8rem; 
+  }
+
+  #hero p {
+    font-size: 1rem; 
+  }
+
+  .btn {
+    padding: 0.6rem 1.2rem; 
+    font-size: 0.9rem;
+  }
+
+  /* --- Tarjetas --- */
+  .card {
+    padding: 1.5rem; 
+  }
+
+  .card h4 {
+    font-size: 1.3rem;
+  }
+}

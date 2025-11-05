@@ -1,0 +1,116 @@
+/* --- Estilos del Formulario de Inscripción --- */
+
+/* Estilos para la notificación */
+#notificacion-container {
+  position: fixed;
+  top: 80px; /* Un poco más abajo para no chocar con el navbar */
+  right: 10px;
+  z-index: 1000;
+}
+
+.notificacion {
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  color: white;
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  margin-bottom: 10px;
+  animation: slideIn 0.5s ease-out;
+}
+
+/* Usamos las variables :root de App.css, pero
+   si no funcionan, descomenta estas líneas: 
+*/
+/*
+.notificacion-success {
+  background-color: #0D8D40; 
+}
+*/
+.notificacion-success {
+  /* Estas variables :root deberían funcionar */
+  background-color: var(--verde-claro);
+}
+
+.notificacion-error {
+  background-color: #d32f2f; /* Un rojo para errores */
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Estilos para el formulario */
+#inscripcionForm {
+  background: #fff;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem; /* Añade espacio al final */
+}
+
+#inscripcionForm h3 {
+  color: var(--verde-halcon);
+  border-bottom: 2px solid var(--verde-claro);
+  padding-bottom: 0.5rem;
+  margin-top: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+#inscripcionForm label {
+  font-weight: 600;
+  margin-top: 0.5rem;
+  display: inline-block;
+}
+
+#inscripcionForm input[type="text"],
+#inscripcionForm input[type="number"],
+#inscripcionForm input[type="date"],
+#inscripcionForm input[type="tel"],
+#inscripcionForm input[type="email"],
+#inscripcionForm select,
+#inscripcionForm textarea {
+  width: 100%;
+  padding: 0.8rem;
+  margin-top: 0.25rem;
+  margin-bottom: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.radio-group {
+  margin: 0.5rem 0 1rem 0;
+}
+
+.radio-group label {
+  font-weight: normal;
+  margin-right: 1rem;
+}
+.radio-group input[type="radio"] {
+  margin-right: 0.25rem;
+}
+
+#inscripcionForm input[type="submit"] {
+  background-color: var(--verde-halcon);
+  color: var(--blanco);
+  padding: 0.8rem 1.5rem;
+  text-decoration: none;
+  font-weight: bold;
+  font-size: 1.1rem;
+  border-radius: 5px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  margin-top: 1rem;
+}
+
+#inscripcionForm input[type="submit"]:hover {
+  background-color: var(--verde-claro);
+}
