@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import './Inscripcion.css'; 
+import './inscripcion.css'; 
 
 function Inscripcion() {
   

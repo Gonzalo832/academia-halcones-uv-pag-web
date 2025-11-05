@@ -81,27 +81,21 @@ function HomePage() {
           <div className="cards-grid">
             <div className="card">
               <h4>Jonathan</h4>
-              <p>Entrenador Principal</p>
             </div>
             <div className="card">
               <h4>Aaron</h4>
-              <p>Entrenador Categoría Infantil</p>
             </div>
             <div className="card">
               <h4>Manolo</h4>
-              <p>Entrenador Categoría Juvenil</p>
             </div>
             <div className="card">
               <h4>Mario</h4>
-              <p>Preparador Físico</p>
             </div>
             <div className="card">
               <h4>Karina</h4>
-              <p>Entrenadora</p>
             </div>
             <div className="card">
               <h4>Cynthia</h4>
-              <p>Asistente</p>
             </div>
           </div>
         </div>
