@@ -10,7 +10,7 @@ class Administrador extends Model
     protected $primaryKey = 'id_administrador';
     public $timestamps = false; 
     
-    protected $fillable = ['id_administrador', 'nombre_completo']; 
+    protected $fillable = ['id_administrador']; 
     protected $guarded = [];
 
     public function usuario() { return $this->belongsTo(Usuario::class, 'id_administrador', 'id_usuario'); }

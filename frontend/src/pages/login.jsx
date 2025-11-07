@@ -9,41 +9,48 @@ function Login() {
   const navigate = useNavigate(); 
 
   const handleSubmit = async (event) => {
-    event.preventDefault();
-    setError(''); 
+      event.preventDefault();
+      setError(''); 
 
-    try {
-      const response = await fetch('http://localhost:3000/api/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ user, password })
-      });
-      const data = await response.json();
+      try {
+        const response = await fetch('http://academia-backend.test/api/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json' 
+          },
+          body: JSON.stringify({ 
+            correo: user, 
+            password: password 
+          })
+        });
+        const data = await response.json();
 
-      if (data.success) {
-        localStorage.setItem('userRole', data.rol);
-        localStorage.setItem('isLoggedIn', 'true');
-        localStorage.setItem('userEmail', user);
-        
-        if (data.rol === 'Administrador') {
-          navigate('/admin/inicio'); 
-        } else if (data.rol === 'Padre') {
-          navigate('/padre/inicio'); 
+        if (data.success) {
+          localStorage.setItem('userToken', data.token);
+          localStorage.setItem('userRole', data.rol);
+          localStorage.setItem('isLoggedIn', 'true');
+          localStorage.setItem('userEmail', user);
+          
+          // --- ¡AQUÍ ESTÁ LA MAGIA! ---
+          if (data.rol === 'Administrador') {
+            // 1. Redirige al admin al nuevo panel
+            navigate('/admin/inicio'); 
+          } else if (data.rol === 'Padre') {
+            // 2. (En el futuro) Redirige al padre a su propio panel
+            navigate('/padre/inicio'); 
+          } else {
+            navigate('/'); 
+          }
         } else {
-          navigate('/'); 
+          localStorage.clear();
+          setError(data.message || 'Credenciales incorrectas.');
         }
-      } else {
-        localStorage.removeItem('userRole');
-        localStorage.removeItem('isLoggedIn');
-        setError(data.message || 'Usuario o contraseña incorrectos.');
+      } catch (error) {
+        console.error('Error al conectar con el servidor:', error);
+        setError('Error de conexión con el servidor.');
       }
-    } catch (error) {
-      console.error('Error al conectar con el servidor:', error);
-      setError('Error de conexión con el servidor.');
-    }
-  };
+    };
 
   return (
     <div className="login-page-wrapper">

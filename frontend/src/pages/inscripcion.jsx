@@ -34,7 +34,7 @@ function Inscripcion() {
     setNotificacion({ visible: false, mensaje: '', tipo: '' });
 
     try {
-      const response = await fetch('http://localhost:3000/inscripcion', {
+      const response = await fetch('http://academia-backend.test/api/inscripcion', {
         method: 'POST',
         body: formData
       });

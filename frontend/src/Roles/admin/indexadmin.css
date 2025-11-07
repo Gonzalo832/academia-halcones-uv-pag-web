@@ -1,0 +1,289 @@
+/* --- Variables Globales de Color --- */
+:root {
+  --gris-claro: #f4f4f4;
+  --texto-oscuro: #333;
+  --blanco: #fff;
+  --verde-claro: #0D8D40;
+  --verde-halcon: #00552B;
+  --verde-brillante: #0F9F4B;
+  --azul-navbar: #2c3e50;
+}
+
+/* --- Animaciones (Keyframes) --- */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes gradientMove {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* --- Estilos Base --- */
+.admin-dashboard {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: var(--gris-claro);
+  animation: fadeIn 0.5s ease-in-out; /* Animación de entrada */
+}
+
+/* --- Navbar del Admin (Mejorada) --- */
+.admin-navbar {
+  /* Efecto "vidrio esmerilado" */
+  background-color: rgba(44, 62, 80, 0.9); /* Azul-navbar con transparencia */
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  
+  color: var(--texto-oscuro);
+  border-bottom: 1px solid var(--gris-claro);
+  padding: 1rem 0;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+  
+  /* Navbar Fija */
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.admin-navbar .container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.admin-navbar .logo h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: var(--blanco); /* Color blanco para mejor contraste */
+}
+
+.admin-navbar .logout-btn {
+  background-color: var(--verde-claro);
+  color: var(--blanco);
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.admin-navbar .logout-btn:hover {
+  background-color: var(--verde-brillante);
+  transform: scale(1.05); /* Efecto "pop" al pasar el mouse */
+}
+
+/* --- Contenido Principal --- */
+.dashboard {
+  padding: 3rem 0;
+  flex-grow: 1; /* Hace que el main ocupe el espacio */
+}
+
+.dashboard-container h1 {
+  font-size: 2.5rem;
+  color: var(--verde-halcon);
+  text-align: center;
+  margin-bottom: 2.5rem;
+
+  /* Título con degradado animado */
+  background: linear-gradient(
+    45deg,
+    var(--verde-halcon),
+    var(--verde-claro),
+    var(--verde-halcon)
+  );
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gradientMove 4s ease infinite;
+}
+
+/* --- Grid de Tarjetas (Animadas) --- */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.card {
+  background: var(--blanco);
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+  /* Para efecto "shine" */
+  position: relative;
+  overflow: hidden;
+
+  /* Animación de entrada */
+  opacity: 0;
+  animation: slideUp 0.5s ease-out forwards;
+}
+
+/* Animación escalonada para las tarjetas */
+.card:nth-child(1) { animation-delay: 0.1s; }
+.card:nth-child(2) { animation-delay: 0.2s; }
+.card:nth-child(3) { animation-delay: 0.3s; }
+.card:nth-child(4) { animation-delay: 0.4s; }
+.card:nth-child(5) { animation-delay: 0.5s; }
+.card:nth-child(6) { animation-delay: 0.6s; }
+
+.card:hover {
+  transform: translateY(-5px) scale(1.02);
+  box-shadow: 0 8px 20px rgba(0, 85, 43, 0.15); /* Sombra más suave y verde */
+}
+
+/* Efecto "Shine" (brillo) al pasar el mouse */
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    120deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transform: skewX(-25deg);
+  transition: left 0.7s ease-in-out;
+  z-index: 1;
+}
+
+.card:hover::before {
+  left: 100%;
+}
+
+.card h3,
+.card p,
+.card .btn {
+  /* Asegura que el contenido esté sobre el efecto "shine" */
+  position: relative;
+  z-index: 2;
+}
+
+.card h3 {
+  color: var(--verde-halcon); /* Título oscuro para legibilidad */
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.card p {
+  flex-grow: 1; /* Empuja el botón al fondo */
+  margin-bottom: 1.5rem;
+  color: var(--texto-oscuro);
+}
+
+.card .btn {
+  background-color: var(--verde-claro);
+  color: var(--blanco);
+  padding: 0.8rem 1.5rem;
+  text-decoration: none;
+  font-weight: bold;
+  border-radius: 5px;
+  text-align: center;
+  transition: background-color 0.3s ease, transform 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.card .btn:hover {
+  background-color: var(--verde-brillante);
+  transform: scale(1.05);
+  box-shadow: 0 4px 10px rgba(13, 141, 64, 0.3); /* Sombra verde en hover */
+}
+
+/* --- Footer --- */
+.footer {
+  background-color: var(--verde-halcon);
+  color: var(--blanco);
+  text-align: center;
+  padding: 2rem 0;
+  margin-top: auto; /* Se asegura que esté al fondo si el contenido es corto */
+}
+
+
+/* --- ================== --- */
+/* --- RESPONSIVE DESIGN --- */
+/* --- ================== --- */
+
+/* Tablet (y móviles grandes en horizontal) */
+@media (max-width: 992px) {
+  .dashboard {
+    padding: 2rem 0;
+  }
+  .dashboard-container h1 {
+    font-size: 2.2rem;
+    margin-bottom: 2rem;
+  }
+}
+
+/* Móvil (vertical) */
+@media (max-width: 768px) {
+  .admin-navbar .container,
+  .dashboard-container {
+    /* Agrega padding lateral en móvil */
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  .admin-navbar .logo h2 {
+    font-size: 1.3rem;
+  }
+  
+  .dashboard {
+    padding: 1.5rem 0;
+  }
+  
+  .card {
+    padding: 1.5rem;
+  }
+
+  .footer {
+    padding: 1.5rem 0;
+  }
+}
+
+/* Móvil pequeño */
+@media (max-width: 480px) {
+  .admin-navbar .logo h2 {
+    font-size: 1.1rem;
+  }
+
+  .admin-navbar .logout-btn {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.9rem;
+  }
+
+  .dashboard-container h1 {
+    font-size: 1.8rem;
+  }
+}

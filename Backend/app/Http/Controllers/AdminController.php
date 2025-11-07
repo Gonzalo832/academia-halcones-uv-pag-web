@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Exception;
 
-
+// --- Tus Modelos ---
 use App\Models\Usuario;
 use App\Models\PadreTutor;
 use App\Models\Alumno;
@@ -24,7 +24,7 @@ use App\Models\Curso;
 
 class AdminController extends Controller
 {
-
+    // Mapeo para los IDs de Categoría y Curso
     private $categoriaMap = [
         '2020-2021' => 1, 
         '2018-2019' => 2, 
@@ -39,7 +39,10 @@ class AdminController extends Controller
         'Curso 2' => 2
     ];
 
-
+    /**
+     * Maneja el formulario de inscripción pública.
+     * (Esta función ya estaba perfecta)
+     */
     public function handleInscripcion(Request $request)
     {
         // 1. VALIDACIÓN DE DATOS Y ARCHIVOS
@@ -108,11 +111,12 @@ class AdminController extends Controller
                 'nombre_completo' => $request->nombre_tutor,
                 'telefono' => $request->telefono,
                 'direccion' => $request->direccion,
+                'como_se_entero' => $request->input('comoseentero'),
+                'expectativas' => $request->input('expectativas'),
             ]);
             $id_padre = $padre->id_padre;
 
             // --- 3.3. GESTIÓN DE ARCHIVOS (Storage) ---
-            // IMPORTANTE: Recuerda ejecutar `php artisan storage:link`
             $pathBase = "inscripciones/{$matricula}"; // storage/app/public/inscripciones/...
             
             $acta_nacimiento_path = $request->file('acta_nacimiento')->store($pathBase, 'public'); 
@@ -121,7 +125,7 @@ class AdminController extends Controller
 
             // --- 3.4. CREAR EL ALUMNO ---
             $alumno = Alumno::create([
-                'id_padre_fk' => $id_padre,
+                'id_padre' => $id_padre, // Corregido: id_padre en lugar de id_padre_fk
                 'matricula' => $matricula,
                 'nombre_completo' => $request->nombre,
                 'edad' => $request->edad,
@@ -130,40 +134,34 @@ class AdminController extends Controller
                 'talla_camiseta' => $request->talla_camiseta,
                 'estatura' => $request->estatura,
                 'peso' => $request->peso,
-                'nombredelcentroeducativo' => $request->nombredelcentroeducativo,
-                'segurmedico' => $request->segurmedico,
-                'nombre_institucion' => $request->input('nombre_institucion', null),
-                'alergiaEnfermedadCondicionMedica' => $request->alergiaEnfermedadCondicionMedica,
-                'detalleAlergiaEnfermedadCondicionMedica' => $request->input('detalleAlergiaEnfermedadCondicionMedica', null),
-                'alergiamedicamentos' => $request->alergiamedicamentos,
-                'detalleAlergiaMedicamento' => $request->input('detalleAlergiaMedicamento', null),
-                'actividadfisica' => $request->actividadfisica,
-                'experiencia' => $request->experiencia,
-                'equiposparticipando' => $request->input('equiposparticipando', null),
-                'habilidades' => json_encode($request->input('habilidades', [])), // Guarda como JSON
-                'comoseentero' => $request->comoseentero,
-                'expectativas' => $request->expectativas,
-                'hermanos' => $request->hermanos,
-                'detalleHermano' => $request->input('detalleHermano', null),
-                'acta_nacimiento_path' => $acta_nacimiento_path,
-                'certificado_medico_path' => $certificado_medico_path,
-                'foto_nino_path' => $foto_nino_path,
-                'id_categoria_fk' => $this->categoriaMap[$request->categoria] ?? null,
-                'id_curso_fk' => $this->cursoMap[$request->curso] ?? null,
+                'centro_educativo' => $request->nombredelcentroeducativo, // Corregido
+                'seguro_medico' => $request->segurmedico == 'si', // Convertir a boolean
+                'enfermedades' => $request->input('detalleAlergiaEnfermedadCondicionMedica', null),
+                'alergias' => $request->input('detalleAlergiaMedicamento', null),
+                'equipo_previo' => $request->input('equiposparticipando', null),
+                'habilidades' => json_encode($request->input('habilidades', [])),
+                'comoseentero' => $request->comoseentero, // Añadido
+                'expectativas' => $request->expectativas, // Añadido
+                'hermanos' => $request->hermanos, // Añadido
+                'detalleHermano' => $request->input('detalleHermano', null), // Añadido
+                'acta_nacimiento' => $acta_nacimiento_path, // Corregido: Nombres de columna de tu SQL original
+                'certificado_medico' => $certificado_medico_path, // Corregido
+                'foto_nino' => $foto_nino_path, // Corregido
+                'id_categoria' => $this->categoriaMap[$request->categoria] ?? null, // Corregido
+                'id_curso' => $this->cursoMap[$request->curso] ?? null, // Corregido
+                'qr_code' => 'QR-' . $matricula, // Añadido QR Code
             ]);
             
             // --- 3.5. CREAR LA MATRÍCULA ---
             Matricula::create([
-                'id_alumno_fk' => $alumno->id_alumno,
+                // 'id_alumno_fk' => $alumno->id_alumno, // Tu tabla Matriculas no tiene id_alumno
                 'matricula' => $matricula,
-                'fecha_creacion' => now(),
-                'estado' => 'Pendiente', // El admin debe aprobar el pago/documentos
+                'fecha_asignacion' => now(),
+                'estado' => 'Asignada', // Cambiado de Pendiente a Asignada
             ]);
 
             // 4. CONFIRMAR LA TRANSACCIÓN
             DB::commit();
-
-            // (Aquí deberías enviar un email con la $password_temporal)
 
             return response()->json([
                 'success' => true,
@@ -184,16 +182,19 @@ class AdminController extends Controller
 
     /**
      * Agrega nuevo personal (Admin o Entrenador).
-     * (Función proporcionada por ti)
+     * (¡¡ESTA ES LA FUNCIÓN CORREGIDA!!)
      */
-    public function addPersonal(Request $request)
+public function addPersonal(Request $request)
     {
         if (auth()->user()->rol !== 'Administrador') { return response()->json(['success' => false, 'message' => 'Acceso denegado.'], 403); }
+        
+        // --- 1. VALIDACIÓN CORREGIDA ---
+        // 'nombre_completo' SOLO es requerido si el rol es 'Entrenador'
         $request->validate([
-            'nombre_completo' => 'required|string|max:255',
             'correo' => 'required|email|unique:Usuarios,correo',
             'contrasena' => 'required|string|min:8',
             'rol' => 'required|in:Administrador,Entrenador',
+            'nombre_completo' => 'required_if:rol,Entrenador|string|max:255',
         ]);
         
         DB::beginTransaction();
@@ -202,37 +203,41 @@ class AdminController extends Controller
             $usuario = Usuario::create(['correo' => $request->correo, 'contrasena' => $hashedPassword, 'rol' => $request->rol]);
             $id_usuario = $usuario->id_usuario;
 
+            // --- 2. LÓGICA DE CREACIÓN CORREGIDA ---
             if ($request->rol === 'Administrador') {
-                Administrador::create(['id_administrador' => $id_usuario, 'nombre_completo' => $request->nombre_completo]);
+                
+                // ¡CORREGIDO! Ya no se pasa 'nombre_completo'
+                Administrador::create(['id_administrador' => $id_usuario]);
+            
             } else if ($request->rol === 'Entrenador') {
                 $qr_code = 'ENTRENADOR_' . uniqid(); 
-                Entrenador::create(['id_entrenador' => $id_usuario, 'nombre_completo' => $request->nombre_completo, 'qr_code' => $qr_code]);
+                Entrenador::create([
+                    'id_entrenador' => $id_usuario, 
+                    'nombre_completo' => $request->nombre_completo, // Aquí SÍ se pasa el nombre
+                    'qr_code' => $qr_code
+                ]);
             }
             
             DB::commit();
             return response()->json(['success' => true, 'message' => 'Personal agregado correctamente.'], 200);
 
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             DB::rollBack(); 
-            Log::error("Error al agregar personal: " . $e->getMessage());
+            \Log::error("Error al agregar personal: " . $e->getMessage());
             return response()->json(['success' => false, 'message' => 'Error en el servidor.'], 500);
         }
     }
-    
     /**
      * Obtener todos los Alumnos (con sus relaciones).
-     * (Función proporcionada por ti)
      */
     public function getAlumnos(Request $request)
     {
         if (auth()->user()->rol !== 'Administrador' && auth()->user()->rol !== 'Entrenador') { return response()->json(['message' => 'Acceso denegado.'], 403); }
-        // Carga las relaciones (categoria, curso, padre)
         $alumnos = Alumno::with(['categoria', 'curso', 'padre'])->get();
         return response()->json($alumnos, 200);
     }
     
     /**
-     * (FUNCIÓN FALTANTE - AÑADIDA)
      * Obtener todos los Padres (con su usuario).
      */
     public function getPadres(Request $request)
@@ -240,16 +245,12 @@ class AdminController extends Controller
         if (auth()->user()->rol !== 'Administrador' && auth()->user()->rol !== 'Entrenador') { 
             return response()->json(['message' => 'Acceso denegado.'], 403); 
         }
-        
-        // Carga la relación 'usuario' para ver el email, rol, etc.
         $padres = PadreTutor::with('usuario')->get(); 
-        
         return response()->json($padres, 200);
     }
 
     /**
      * Obtener contadores para el dashboard.
-     * (Función proporcionada por ti)
      */
     public function getContadores(Request $request)
     {
@@ -260,7 +261,6 @@ class AdminController extends Controller
     
     /**
      * Obtener todas las Matrículas.
-     * (Función proporcionada por ti)
      */
     public function getMatriculas(Request $request)
     {
@@ -270,7 +270,6 @@ class AdminController extends Controller
     }
 
     /**
-     * (FUNCIÓN FALTANTE - AÑADIDA)
      * Añadir una nueva matrícula manualmente.
      */
     public function addMatricula(Request $request)
@@ -280,7 +279,7 @@ class AdminController extends Controller
         $validator = Validator::make($request->all(), [
             'matricula' => 'required|string|unique:Matriculas,matricula',
             'id_alumno_fk' => 'nullable|integer|exists:Alumnos,id_alumno',
-            'estado' => 'required|in:Disponible,Asignada,Pendiente',
+            'estado' => 'required|in:Disponible,Asignada', // Tu SQL solo tiene estas dos
         ]);
 
         if ($validator->fails()) {
@@ -290,9 +289,9 @@ class AdminController extends Controller
         try {
             Matricula::create([
                 'matricula' => $request->matricula,
-                'id_alumno_fk' => $request->input('id_alumno_fk', null),
+                // 'id_alumno_fk' => $request->input('id_alumno_fk', null), // Tu tabla no tiene esta columna
                 'estado' => $request->estado,
-                'fecha_creacion' => now(),
+                'fecha_asignacion' => $request->estado == 'Asignada' ? now() : null,
             ]);
             
             return response()->json(['success' => true, 'message' => 'Matrícula agregada con éxito.'], 201);
@@ -304,12 +303,10 @@ class AdminController extends Controller
     }
     
     /**
-     * (FUNCIÓN FALTANTE - AÑADIDA)
      * Subir un comprobante de pago (Ruta de Padre).
      */
     public function uploadComprobante(Request $request)
     {
-        // Solo los padres pueden subir comprobantes
         if (auth()->user()->rol !== 'Padre') { return response()->json(['success' => false, 'message' => 'Acceso denegado.'], 403); }
 
         $validator = Validator::make($request->all(), [
@@ -327,9 +324,8 @@ class AdminController extends Controller
         $padre = PadreTutor::where('id_usuario_fk', $id_usuario_autenticado)->first();
         if (!$padre) { return response()->json(['success' => false, 'message' => 'Padre no encontrado.'], 404); }
 
-        // Validar que el alumno pertenezca al padre
         $alumno = Alumno::where('id_alumno', $request->id_alumno)
-                        ->where('id_padre_fk', $padre->id_padre)
+                        ->where('id_padre', $padre->id_padre) // Corregido: id_padre
                         ->first();
 
         if (!$alumno) {
@@ -337,7 +333,6 @@ class AdminController extends Controller
         }
 
         try {
-            // Subir archivo
             $pathComprobante = $request->file('comprobante')->store("public/comprobantes/{$padre->id_padre}");
 
             Pago::create([
@@ -346,7 +341,7 @@ class AdminController extends Controller
                 'fecha_pago' => now(),
                 'tipo_pago' => $request->tipo_pago,
                 'comprobante' => $pathComprobante,
-                'estado' => 'Pendiente', // El admin lo debe aprobar
+                'estado' => 'Pendiente', 
                 'monto' => $request->monto,
             ]);
 
@@ -358,10 +353,9 @@ class AdminController extends Controller
         }
     }
     
-    // ====================================================
-    // Rutas de Padre (Proporcionadas por ti)
-    // ====================================================
-    
+    /**
+     * Obtener Hijos del Padre Autenticado.
+     */
     public function getPadreHijos(Request $request)
     {
         if (auth()->user()->rol !== 'Padre') { return response()->json(['success' => false, 'message' => 'Acceso denegado.'], 403); }
@@ -374,6 +368,9 @@ class AdminController extends Controller
         return response()->json(['success' => true, 'hijos' => $hijos], 200);
     }
     
+    /**
+     * Obtener Comprobantes del Padre.
+     */
     public function getComprobantes(Request $request)
     {
         if (auth()->user()->rol !== 'Padre') { return response()->json(['success' => false, 'message' => 'Acceso denegado.'], 403); }
@@ -389,6 +386,9 @@ class AdminController extends Controller
         return response()->json(['success' => true, 'comprobantes' => $comprobantes], 200);
     }
 
+    /**
+     * Actualizar Contraseña del Padre (Admin).
+     */
     public function updateParentPassword(Request $request)
     {
         if (auth()->user()->rol !== 'Administrador') { return response()->json(['success' => false, 'message' => 'Acceso denegado.'], 403); }
@@ -396,7 +396,7 @@ class AdminController extends Controller
         
         try {
             $padre = PadreTutor::find($request->id_padre);
-            if (!$padre || !$padre->id_usuario_fk) { return response()->json(['success' => false, 'message' => 'Padre no encontrado.'], 404); }
+            if (!$padre || !$padre->id_usuario_fk) { return response()->json(['success' => false, 'message' => 'Padre no encontrado o sin usuario asignado.'], 404); }
             
             $hashedPassword = Hash::make($request->contrasena);
             $usuario = Usuario::where('id_usuario', $padre->id_usuario_fk)->first();
