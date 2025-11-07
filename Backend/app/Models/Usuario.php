@@ -10,29 +10,47 @@ class Usuario extends Authenticatable
 {
     use HasApiTokens, Notifiable;
 
+    /** @var string */
     protected $table = 'Usuarios'; 
-    protected $primaryKey = 'id_usuario';
-    public $timestamps = false; 
 
+    /** @var string */
+    protected $primaryKey = 'id_usuario'; 
+
+    /** @var bool */
+    public $timestamps = true; 
+
+    /** @var array<int, string> */
     protected $fillable = [
         'correo',
         'contrasena',
         'rol',
     ];
 
+    /** @var array<int, string> */
     protected $hidden = [
-        'contrasena',
+        'contrasena', 
     ];
-    
-    protected $guarded = [];
+
+    /** @var array<string, string> */
+    protected $casts = [
+        'contrasena' => 'hashed', 
+    ];
 
     public function getAuthPassword()
     {
         return $this->contrasena;
     }
+    public function administrador()
+    {
+        return $this->hasOne(Administrador::class, 'id_administrador', 'id_usuario');
+    }
 
-    // Relaciones
-    public function administrador() { return $this->hasOne(Administrador::class, 'id_administrador', 'id_usuario'); }
-    public function entrenador() { return $this->hasOne(Entrenador::class, 'id_entrenador', 'id_usuario'); }
-    public function padreTutor() { return $this->hasOne(PadreTutor::class, 'id_usuario_fk', 'id_usuario'); }
+    public function entrenador()
+    {
+        return $this->hasOne(Entrenador::class, 'id_entrenador', 'id_usuario');
+    }
+    public function padreTutor()
+    {
+        return $this->hasOne(PadreTutor::class, 'id_usuario_fk', 'id_usuario');
+    }
 }

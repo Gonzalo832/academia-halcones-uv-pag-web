@@ -2,10 +2,16 @@
 
 namespace App\Http\Controllers;
 
+// --- Imports de Laravel ---
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
+use Exception;
+
+
 use App\Models\Usuario;
 use App\Models\PadreTutor;
 use App\Models\Alumno;
@@ -16,12 +22,9 @@ use App\Models\Pago;
 use App\Models\Categoria;
 use App\Models\Curso;
 
-
-// backend/app/Http/Controllers/AdminController.php
-
 class AdminController extends Controller
 {
-    // --- CORRECCIÓN DE SINTAXIS DE PHP: Usar => en lugar de : ---
+
     private $categoriaMap = [
         '2020-2021' => 1, 
         '2018-2019' => 2, 
@@ -35,151 +38,154 @@ class AdminController extends Controller
         'Curso 1' => 1, 
         'Curso 2' => 2
     ];
-// backend/app/Http/Controllers/AdminController.php (SOLO EL MÉTODO handleInscripcion)
 
-public function handleInscripcion(Request $request)
-{
-    // 1. VALIDACIÓN DE DATOS Y ARCHIVOS (CRÍTICO para la Seguridad)
-    $request->validate([
-        // Datos del Curso
-        'categoria' => 'required|string',
-        'curso' => 'required|string',
-        // Datos del Alumno
-        'nombre' => 'required|string|max:255',
-        'edad' => 'required|integer',
-        'fecha_nacimiento' => 'required|date',
-        'sexo' => 'required|in:Hombre,Mujer',
-        'talla_camiseta' => 'required|string',
-        'estatura' => 'required|numeric',
-        'peso' => 'required|numeric',
-        'nombredelcentroeducativo' => 'required|string|max:255',
-        'segurmedico' => 'required|in:si,no',
-        'nombre_institucion' => 'nullable|string|max:255',
-        // Archivos (Subida segura)
-        'acta_nacimiento' => 'required|file|mimes:pdf,jpg,jpeg,png|max:4096', 
-        'certificado_medico' => 'required|file|mimes:pdf,jpg,jpeg,png|max:4096',
-        'foto_nino' => 'required|file|mimes:jpg,jpeg,png|max:4096',
-        // Datos de Salud
-        'alergiaEnfermedadCondicionMedica' => 'required|in:si,no',
-        'detalleAlergiaEnfermedadCondicionMedica' => 'nullable|string',
-        'alergiamedicamentos' => 'required|in:si,no',
-        'detalleAlergiaMedicamento' => 'nullable|string',
-        'actividadfisica' => 'required|string',
-        // Experiencia
-        'experiencia' => 'required|in:si,no',
-        // Datos del Tutor
-        'nombre_tutor' => 'required|string|max:255',
-        'telefono' => 'required|string|max:20',
-        'email' => 'required|email|unique:Usuarios,correo', // CRÍTICO: El email no debe existir ya
-        'direccion' => 'required|string|max:255',
-        // Datos Adicionales
-        'comoseentero' => 'required|string',
-        'expectativas' => 'required|string',
-        'hermanos' => 'required|in:si,no',
-        'detalleHermano' => 'nullable|string',
-        // Habilidades
-        'habilidades' => 'array',
-        'habilidades.*' => 'string', // Valida que cada elemento del array sea string
-    ]);
 
-    // 2. CREACIÓN DE CONTRASEÑA Y MATRÍCULA
-    // Se usa una contraseña por defecto que será enviada al correo (en la implementación real)
-    $password_temporal = 'MySecurePass!';
-    $hashedPassword = Hash::make($password_temporal);
-    $matricula = 'HALCON' . time() . rand(100, 999); // Genera una matrícula única
-
-    // 3. INICIO DE LA TRANSACCIÓN (Garantiza que todo se guarde o que nada se guarde)
-    DB::beginTransaction();
-
-    try {
-        // --- 3.1. CREAR EL USUARIO (Padre/Tutor) ---
-        $usuario = Usuario::create([
-            'correo' => $request->email,
-            'contrasena' => $hashedPassword,
-            'rol' => 'Padre', // Rol fijo para las inscripciones
-        ]);
-        $id_usuario = $usuario->id_usuario;
-
-        // --- 3.2. CREAR EL PADRE/TUTOR ---
-        $padre = PadreTutor::create([
-            'id_usuario_fk' => $id_usuario,
-            'nombre_completo' => $request->nombre_tutor,
-            'telefono' => $request->telefono,
-            'direccion' => $request->direccion,
-        ]);
-        $id_padre = $padre->id_padre;
-
-        // --- 3.3. GESTIÓN DE ARCHIVOS (Subida Segura con Storage) ---
-        $pathBase = "inscripciones/{$matricula}"; // La carpeta se creará dentro de storage/app/public/
-        
-        // Uso de Storage::putFile para evitar inyección y generar un nombre único seguro
-        $acta_nacimiento_path = $request->file('acta_nacimiento')->store($pathBase, 'public'); 
-        $certificado_medico_path = $request->file('certificado_medico')->store($pathBase, 'public');
-        $foto_nino_path = $request->file('foto_nino')->store($pathBase, 'public');
-
-        // --- 3.4. CREAR EL ALUMNO ---
-        $alumno = Alumno::create([
-            'id_padre_fk' => $id_padre,
-            'matricula' => $matricula,
-            'nombre_completo' => $request->nombre,
-            'edad' => $request->edad,
-            'fecha_nacimiento' => $request->fecha_nacimiento,
-            'sexo' => $request->sexo,
-            'talla_camiseta' => $request->talla_camiseta,
-            'estatura' => $request->estatura,
-            'peso' => $request->peso,
-            'nombredelcentroeducativo' => $request->nombredelcentroeducativo,
-            // Salud, etc.
-            'segurmedico' => $request->segurmedico,
-            'nombre_institucion' => $request->input('nombre_institucion', null), // Usar null si no aplica
-            'alergiaEnfermedadCondicionMedica' => $request->alergiaEnfermedadCondicionMedica,
-            'detalleAlergiaEnfermedadCondicionMedica' => $request->input('detalleAlergiaEnfermedadCondicionMedica', null),
-            'alergiamedicamentos' => $request->alergiamedicamentos,
-            'detalleAlergiaMedicamento' => $request->input('detalleAlergiaMedicamento', null),
-            'actividadfisica' => $request->actividadfisica,
-            'experiencia' => $request->experiencia,
-            'equiposparticipando' => $request->input('equiposparticipando', null),
-            'habilidades' => json_encode($request->input('habilidades', [])), // Guarda las habilidades como JSON
-            'comoseentero' => $request->comoseentero,
-            'expectativas' => $request->expectativas,
-            'hermanos' => $request->hermanos,
-            'detalleHermano' => $request->input('detalleHermano', null),
-            // Rutas de los Archivos
-            'acta_nacimiento_path' => $acta_nacimiento_path,
-            'certificado_medico_path' => $certificado_medico_path,
-            'foto_nino_path' => $foto_nino_path,
-            // IDs de Mapeo
-            'id_categoria_fk' => $this->categoriaMap[$request->categoria],
-            'id_curso_fk' => $this->cursoMap[$request->curso],
-        ]);
-        
-        // --- 3.5. CREAR LA MATRÍCULA ---
-        Matricula::create([
-            'id_alumno_fk' => $alumno->id_alumno,
-            'matricula' => $matricula,
-            'fecha_creacion' => now(),
-            'estado' => 'Pendiente', // Estado inicial
+    public function handleInscripcion(Request $request)
+    {
+        // 1. VALIDACIÓN DE DATOS Y ARCHIVOS
+        $request->validate([
+            // Datos del Curso
+            'categoria' => 'required|string',
+            'curso' => 'required|string',
+            // Datos del Alumno
+            'nombre' => 'required|string|max:255',
+            'edad' => 'required|integer',
+            'fecha_nacimiento' => 'required|date',
+            'sexo' => 'required|in:Hombre,Mujer',
+            'talla_camiseta' => 'required|string',
+            'estatura' => 'required|numeric',
+            'peso' => 'required|numeric',
+            'nombredelcentroeducativo' => 'required|string|max:255',
+            'segurmedico' => 'required|in:si,no',
+            'nombre_institucion' => 'nullable|string|max:255',
+            // Archivos (Subida segura)
+            'acta_nacimiento' => 'required|file|mimes:pdf,jpg,jpeg,png|max:4096', 
+            'certificado_medico' => 'required|file|mimes:pdf,jpg,jpeg,png|max:4096',
+            'foto_nino' => 'required|file|mimes:jpg,jpeg,png|max:4096',
+            // Datos de Salud
+            'alergiaEnfermedadCondicionMedica' => 'required|in:si,no',
+            'detalleAlergiaEnfermedadCondicionMedica' => 'nullable|string',
+            'alergiamedicamentos' => 'required|in:si,no',
+            'detalleAlergiaMedicamento' => 'nullable|string',
+            'actividadfisica' => 'required|string',
+            // Experiencia
+            'experiencia' => 'required|in:si,no',
+            // Datos del Tutor
+            'nombre_tutor' => 'required|string|max:255',
+            'telefono' => 'required|string|max:20',
+            // CRÍTICO: El email debe ser único en tu tabla 'Usuarios'
+            'email' => 'required|email|unique:Usuarios,correo', 
+            'direccion' => 'required|string|max:255',
+            // Datos Adicionales
+            'comoseentero' => 'required|string',
+            'expectativas' => 'required|string',
+            'hermanos' => 'required|in:si,no',
+            'detalleHermano' => 'nullable|string',
+            'habilidades' => 'array',
+            'habilidades.*' => 'string',
         ]);
 
-        // 4. CONFIRMAR LA TRANSACCIÓN
-        DB::commit();
+        // 2. CREACIÓN DE CONTRASEÑA Y MATRÍCULA
+        $password_temporal = 'HalconesUV2025!'; // Contraseña temporal
+        $hashedPassword = Hash::make($password_temporal);
+        $matricula = 'HAL-' . time() . rand(10, 99); // Genera una matrícula única
 
-        return response()->json([
-            'message' => '¡Inscripción recibida! Revise el correo para su contraseña temporal. Matrícula: ' . $matricula,
-            'matricula' => $matricula,
-        ], 200);
+        // 3. INICIO DE LA TRANSACCIÓN
+        DB::beginTransaction();
 
-    } catch (\Exception $e) {
-        // 5. REVERTIR LA TRANSACCIÓN Y LOGUEAR ERROR
-        DB::rollBack();
-        
-        // Eliminar archivos subidos si la BD falló (aunque la transacción es la clave)
-        if (isset($pathBase)) { Storage::deleteDirectory("public/{$pathBase}"); }
-        
-        \Log::error("Error en la inscripción: " . $e->getMessage());
-        return response()->json(['message' => 'Error en el servidor al procesar la inscripción. Detalle: ' . $e->getMessage()], 500);
+        try {
+            // --- 3.1. CREAR EL USUARIO (Padre/Tutor) ---
+            $usuario = Usuario::create([
+                'correo' => $request->email,
+                'contrasena' => $hashedPassword,
+                'rol' => 'Padre', // Rol fijo para las inscripciones
+            ]);
+            $id_usuario = $usuario->id_usuario;
+
+            // --- 3.2. CREAR EL PADRE/TUTOR ---
+            $padre = PadreTutor::create([
+                'id_usuario_fk' => $id_usuario,
+                'nombre_completo' => $request->nombre_tutor,
+                'telefono' => $request->telefono,
+                'direccion' => $request->direccion,
+            ]);
+            $id_padre = $padre->id_padre;
+
+            // --- 3.3. GESTIÓN DE ARCHIVOS (Storage) ---
+            // IMPORTANTE: Recuerda ejecutar `php artisan storage:link`
+            $pathBase = "inscripciones/{$matricula}"; // storage/app/public/inscripciones/...
+            
+            $acta_nacimiento_path = $request->file('acta_nacimiento')->store($pathBase, 'public'); 
+            $certificado_medico_path = $request->file('certificado_medico')->store($pathBase, 'public');
+            $foto_nino_path = $request->file('foto_nino')->store($pathBase, 'public');
+
+            // --- 3.4. CREAR EL ALUMNO ---
+            $alumno = Alumno::create([
+                'id_padre_fk' => $id_padre,
+                'matricula' => $matricula,
+                'nombre_completo' => $request->nombre,
+                'edad' => $request->edad,
+                'fecha_nacimiento' => $request->fecha_nacimiento,
+                'sexo' => $request->sexo,
+                'talla_camiseta' => $request->talla_camiseta,
+                'estatura' => $request->estatura,
+                'peso' => $request->peso,
+                'nombredelcentroeducativo' => $request->nombredelcentroeducativo,
+                'segurmedico' => $request->segurmedico,
+                'nombre_institucion' => $request->input('nombre_institucion', null),
+                'alergiaEnfermedadCondicionMedica' => $request->alergiaEnfermedadCondicionMedica,
+                'detalleAlergiaEnfermedadCondicionMedica' => $request->input('detalleAlergiaEnfermedadCondicionMedica', null),
+                'alergiamedicamentos' => $request->alergiamedicamentos,
+                'detalleAlergiaMedicamento' => $request->input('detalleAlergiaMedicamento', null),
+                'actividadfisica' => $request->actividadfisica,
+                'experiencia' => $request->experiencia,
+                'equiposparticipando' => $request->input('equiposparticipando', null),
+                'habilidades' => json_encode($request->input('habilidades', [])), // Guarda como JSON
+                'comoseentero' => $request->comoseentero,
+                'expectativas' => $request->expectativas,
+                'hermanos' => $request->hermanos,
+                'detalleHermano' => $request->input('detalleHermano', null),
+                'acta_nacimiento_path' => $acta_nacimiento_path,
+                'certificado_medico_path' => $certificado_medico_path,
+                'foto_nino_path' => $foto_nino_path,
+                'id_categoria_fk' => $this->categoriaMap[$request->categoria] ?? null,
+                'id_curso_fk' => $this->cursoMap[$request->curso] ?? null,
+            ]);
+            
+            // --- 3.5. CREAR LA MATRÍCULA ---
+            Matricula::create([
+                'id_alumno_fk' => $alumno->id_alumno,
+                'matricula' => $matricula,
+                'fecha_creacion' => now(),
+                'estado' => 'Pendiente', // El admin debe aprobar el pago/documentos
+            ]);
+
+            // 4. CONFIRMAR LA TRANSACCIÓN
+            DB::commit();
+
+            // (Aquí deberías enviar un email con la $password_temporal)
+
+            return response()->json([
+                'success' => true,
+                'message' => '¡Inscripción recibida! Se ha creado una cuenta. Matrícula: ' . $matricula,
+                'matricula' => $matricula,
+            ], 201); // 201 = Creado
+
+        } catch (Exception $e) {
+            // 5. REVERTIR LA TRANSACCIÓN Y LOGUEAR ERROR
+            DB::rollBack();
+            
+            if (isset($pathBase)) { Storage::deleteDirectory("public/{$pathBase}"); }
+            
+            Log::error("Error en la inscripción: " . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Error en el servidor al procesar la inscripción.', 'error' => $e->getMessage()], 500);
+        }
     }
-}
+
+    /**
+     * Agrega nuevo personal (Admin o Entrenador).
+     * (Función proporcionada por ti)
+     */
     public function addPersonal(Request $request)
     {
         if (auth()->user()->rol !== 'Administrador') { return response()->json(['success' => false, 'message' => 'Acceso denegado.'], 403); }
@@ -206,22 +212,45 @@ public function handleInscripcion(Request $request)
             DB::commit();
             return response()->json(['success' => true, 'message' => 'Personal agregado correctamente.'], 200);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack(); 
-            \Log::error("Error al agregar personal: " . $e->getMessage());
+            Log::error("Error al agregar personal: " . $e->getMessage());
             return response()->json(['success' => false, 'message' => 'Error en el servidor.'], 500);
         }
     }
     
-    // Obtener Alumnos (Lectura Segura con Relaciones)
+    /**
+     * Obtener todos los Alumnos (con sus relaciones).
+     * (Función proporcionada por ti)
+     */
     public function getAlumnos(Request $request)
     {
         if (auth()->user()->rol !== 'Administrador' && auth()->user()->rol !== 'Entrenador') { return response()->json(['message' => 'Acceso denegado.'], 403); }
+        // Carga las relaciones (categoria, curso, padre)
         $alumnos = Alumno::with(['categoria', 'curso', 'padre'])->get();
         return response()->json($alumnos, 200);
     }
     
-    // Obtener Contadores
+    /**
+     * (FUNCIÓN FALTANTE - AÑADIDA)
+     * Obtener todos los Padres (con su usuario).
+     */
+    public function getPadres(Request $request)
+    {
+        if (auth()->user()->rol !== 'Administrador' && auth()->user()->rol !== 'Entrenador') { 
+            return response()->json(['message' => 'Acceso denegado.'], 403); 
+        }
+        
+        // Carga la relación 'usuario' para ver el email, rol, etc.
+        $padres = PadreTutor::with('usuario')->get(); 
+        
+        return response()->json($padres, 200);
+    }
+
+    /**
+     * Obtener contadores para el dashboard.
+     * (Función proporcionada por ti)
+     */
     public function getContadores(Request $request)
     {
         $totalAdministradores = Administrador::count();
@@ -229,19 +258,110 @@ public function handleInscripcion(Request $request)
         return response()->json(['totalAdministradores' => $totalAdministradores, 'totalEntrenadores' => $totalEntrenadores], 200);
     }
     
-    // Obtener Matrículas
+    /**
+     * Obtener todas las Matrículas.
+     * (Función proporcionada por ti)
+     */
     public function getMatriculas(Request $request)
     {
         if (auth()->user()->rol !== 'Administrador') { return response()->json(['success' => false, 'message' => 'Acceso denegado.'], 403); }
         $matriculas = Matricula::all();
         return response()->json($matriculas, 200);
     }
+
+    /**
+     * (FUNCIÓN FALTANTE - AÑADIDA)
+     * Añadir una nueva matrícula manualmente.
+     */
+    public function addMatricula(Request $request)
+    {
+        if (auth()->user()->rol !== 'Administrador') { return response()->json(['success' => false, 'message' => 'Acceso denegado.'], 403); }
+        
+        $validator = Validator::make($request->all(), [
+            'matricula' => 'required|string|unique:Matriculas,matricula',
+            'id_alumno_fk' => 'nullable|integer|exists:Alumnos,id_alumno',
+            'estado' => 'required|in:Disponible,Asignada,Pendiente',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
+        }
+
+        try {
+            Matricula::create([
+                'matricula' => $request->matricula,
+                'id_alumno_fk' => $request->input('id_alumno_fk', null),
+                'estado' => $request->estado,
+                'fecha_creacion' => now(),
+            ]);
+            
+            return response()->json(['success' => true, 'message' => 'Matrícula agregada con éxito.'], 201);
+
+        } catch (Exception $e) {
+            Log::error("Error al agregar matrícula: " . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Error en el servidor.'], 500);
+        }
+    }
     
-    // ----------------------------------------------------
-    // Rutas de Padre
-    // ----------------------------------------------------
+    /**
+     * (FUNCIÓN FALTANTE - AÑADIDA)
+     * Subir un comprobante de pago (Ruta de Padre).
+     */
+    public function uploadComprobante(Request $request)
+    {
+        // Solo los padres pueden subir comprobantes
+        if (auth()->user()->rol !== 'Padre') { return response()->json(['success' => false, 'message' => 'Acceso denegado.'], 403); }
+
+        $validator = Validator::make($request->all(), [
+            'id_alumno' => 'required|integer|exists:Alumnos,id_alumno',
+            'tipo_pago' => 'required|string|in:Mensual,Anual,Bimestral',
+            'monto' => 'required|numeric|min:0',
+            'comprobante' => 'required|file|mimes:pdf,jpg,jpeg,png|max:4096',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
+        }
+        
+        $id_usuario_autenticado = auth()->id();
+        $padre = PadreTutor::where('id_usuario_fk', $id_usuario_autenticado)->first();
+        if (!$padre) { return response()->json(['success' => false, 'message' => 'Padre no encontrado.'], 404); }
+
+        // Validar que el alumno pertenezca al padre
+        $alumno = Alumno::where('id_alumno', $request->id_alumno)
+                        ->where('id_padre_fk', $padre->id_padre)
+                        ->first();
+
+        if (!$alumno) {
+            return response()->json(['success' => false, 'message' => 'Alumno no válido para este padre.'], 403);
+        }
+
+        try {
+            // Subir archivo
+            $pathComprobante = $request->file('comprobante')->store("public/comprobantes/{$padre->id_padre}");
+
+            Pago::create([
+                'id_padre' => $padre->id_padre,
+                'id_alumno' => $request->id_alumno,
+                'fecha_pago' => now(),
+                'tipo_pago' => $request->tipo_pago,
+                'comprobante' => $pathComprobante,
+                'estado' => 'Pendiente', // El admin lo debe aprobar
+                'monto' => $request->monto,
+            ]);
+
+            return response()->json(['success' => true, 'message' => 'Comprobante subido. En espera de aprobación.'], 201);
+
+        } catch (Exception $e) {
+            Log::error("Error al subir comprobante: " . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Error en el servidor.'], 500);
+        }
+    }
     
-    // Obtener Hijos del Padre Autenticado (Migrado en el paso anterior)
+    // ====================================================
+    // Rutas de Padre (Proporcionadas por ti)
+    // ====================================================
+    
     public function getPadreHijos(Request $request)
     {
         if (auth()->user()->rol !== 'Padre') { return response()->json(['success' => false, 'message' => 'Acceso denegado.'], 403); }
@@ -254,7 +374,6 @@ public function handleInscripcion(Request $request)
         return response()->json(['success' => true, 'hijos' => $hijos], 200);
     }
     
-    // Obtener Comprobantes del Padre
     public function getComprobantes(Request $request)
     {
         if (auth()->user()->rol !== 'Padre') { return response()->json(['success' => false, 'message' => 'Acceso denegado.'], 403); }
@@ -270,7 +389,6 @@ public function handleInscripcion(Request $request)
         return response()->json(['success' => true, 'comprobantes' => $comprobantes], 200);
     }
 
-    // Actualizar Contraseña del Padre (Ruta Crítica de Seguridad)
     public function updateParentPassword(Request $request)
     {
         if (auth()->user()->rol !== 'Administrador') { return response()->json(['success' => false, 'message' => 'Acceso denegado.'], 403); }
@@ -287,10 +405,9 @@ public function handleInscripcion(Request $request)
             $usuario->save(); 
 
             return response()->json(['success' => true, 'message' => 'Contraseña actualizada correctamente.'], 200);
-        } catch (\Exception $e) {
-            \Log::error("Error al actualizar la contraseña del padre: " . $e->getMessage());
+        } catch (Exception $e) {
+            Log::error("Error al actualizar la contraseña del padre: " . $e->getMessage());
             return response()->json(['success' => false, 'message' => 'Error en el servidor.'], 500);
         }
     }
-    
 }
